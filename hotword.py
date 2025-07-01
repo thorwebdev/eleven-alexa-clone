@@ -65,7 +65,7 @@ mic_stream = SimpleMicStream(
 
 mic_stream.start_stream()
 
-print("Say Alexa ")
+print("Say Hey Eleven ")
 while True :
     if not convai_active:
         frame = mic_stream.getFrame()
