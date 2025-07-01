@@ -28,6 +28,12 @@ pip install EfficientWord-Net
 python -m eff_word_net.engine
 ```
 
+### Generate custom hotword
+
+```
+python -m eff_word_net.generate_reference --input-dir hotword_training_audio --output-dir hotword_refs --wakeword hey_eleven --model-type resnet_50_arc
+```
+
 ## ElevenLabs ConvAi
 
 ### Dependencies

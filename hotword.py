@@ -5,7 +5,7 @@ from eff_word_net.engine import HotwordDetector
 
 from eff_word_net.audio_processing import Resnet50_Arc_loss
 
-from eff_word_net import samples_loc
+# from eff_word_net import samples_loc
 
 from elevenlabs.client import ElevenLabs
 from elevenlabs.conversational_ai.conversation import Conversation, ConversationInitiationData
@@ -15,8 +15,6 @@ convai_active = False
 
 elevenlabs = ElevenLabs()
 agent_id = "agent_01jynq02rjevdv9nr3zrqxa4mw" # os.getenv("AGENT_ID")
-# Uncomment the line below if you want to create a new agent with end_call tool
-# agent_id = create_agent_with_end_call_tool()
 api_key = os.getenv("ELEVENLABS_API_KEY")
 
 dynamic_vars = {
@@ -53,9 +51,9 @@ conversation = Conversation(
 base_model = Resnet50_Arc_loss()
 
 mycroft_hw = HotwordDetector(
-    hotword="alexa",
+    hotword="hey_eleven",
     model = base_model,
-    reference_file=os.path.join(samples_loc, "alexa_ref.json"),
+    reference_file=os.path.join("hotword_refs", "hey_eleven_ref.json"),
     threshold=0.7,
     relaxation_time=2
 )
