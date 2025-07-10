@@ -1,0 +1,4 @@
+tflite-runtime
+librosa
+EfficientWord-Net
+elevenlabs

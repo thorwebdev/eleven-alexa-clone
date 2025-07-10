@@ -4,6 +4,24 @@
 
 https://github.com/Ant-Brain/EfficientWord-Net
 
+## Quickstart
+
+Install audio related libraries
+
+```
+sudo apt-get update
+sudo apt-get install libportaudio2 libportaudiocpp0 portaudio19-dev libasound-dev libsndfile1-dev -y
+```
+
+Setup virtual environment and install dependencies
+
+```
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python hotword.py
+```
+
 ### Dependency installation
 
 ```

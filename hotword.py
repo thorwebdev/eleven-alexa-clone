@@ -1,5 +1,6 @@
 import os
 import signal
+import time
 from eff_word_net.streams import SimpleMicStream
 from eff_word_net.engine import HotwordDetector
 
@@ -26,28 +27,6 @@ config = ConversationInitiationData(
     dynamic_variables=dynamic_vars
 )
 
-conversation = Conversation(
-    # API client and agent ID.
-    elevenlabs,
-    agent_id,
-    config=config,
-
-    # Assume auth is required when API_KEY is set.
-    requires_auth=bool(api_key),
-
-    # Use the default audio interface.
-    audio_interface=DefaultAudioInterface(),
-
-    # Simple callbacks that print the conversation to the console.
-    callback_agent_response=lambda response: print(f"Agent: {response}"),
-    callback_agent_response_correction=lambda original, corrected: print(f"Agent: {original} -> {corrected}"),
-    callback_user_transcript=lambda transcript: print(f"User: {transcript}"),
-    # TODO: how to handle conversation ended by agent end_call system tool?
-    
-    # Uncomment if you want to see latency measurements.
-    # callback_latency_measurement=lambda latency: print(f"Latency: {latency}ms"),
-)
-
 base_model = Resnet50_Arc_loss()
 
 mycroft_hw = HotwordDetector(
@@ -58,29 +37,114 @@ mycroft_hw = HotwordDetector(
     relaxation_time=2
 )
 
-mic_stream = SimpleMicStream(
-    window_length_secs=1.5,
-    sliding_window_secs=0.75,
-)
+def create_conversation():
+    """Create a new conversation instance"""
+    return Conversation(
+        # API client and agent ID.
+        elevenlabs,
+        agent_id,
+        config=config,
 
-mic_stream.start_stream()
+        # Assume auth is required when API_KEY is set.
+        requires_auth=bool(api_key),
+
+        # Use the default audio interface.
+        audio_interface=DefaultAudioInterface(),
+
+        # Simple callbacks that print the conversation to the console.
+        callback_agent_response=lambda response: print(f"Agent: {response}"),
+        callback_agent_response_correction=lambda original, corrected: print(f"Agent: {original} -> {corrected}"),
+        callback_user_transcript=lambda transcript: print(f"User: {transcript}"),
+        # TODO: how to handle conversation ended by agent end_call system tool?
+        
+        # Uncomment if you want to see latency measurements.
+        # callback_latency_measurement=lambda latency: print(f"Latency: {latency}ms"),
+    )
+
+def start_mic_stream():
+    """Start or restart the microphone stream"""
+    global mic_stream
+    try:
+        mic_stream = SimpleMicStream(
+            window_length_secs=1.5,
+            sliding_window_secs=0.75,
+        )
+        mic_stream.start_stream()
+        print("Microphone stream started")
+    except Exception as e:
+        print(f"Error starting microphone stream: {e}")
+        time.sleep(1)  # Wait a bit before retrying
+
+def stop_mic_stream():
+    """Stop the microphone stream safely"""
+    global mic_stream
+    try:
+        if mic_stream:
+            mic_stream.stop_stream()
+            print("Microphone stream stopped")
+    except Exception as e:
+        print(f"Error stopping microphone stream: {e}")
+
+# Initialize microphone stream
+mic_stream = None
+start_mic_stream()
 
 print("Say Hey Eleven ")
-while True :
+while True:
     if not convai_active:
-        frame = mic_stream.getFrame()
-        result = mycroft_hw.scoreFrame(frame)
-        if result==None :
-            #no voice activity
-            continue
-        if(result["match"]):
-            print("Wakeword uttered",result["confidence"])
-            # Start ConvAI Session
-            print("Start ConvAI Session")
-            convai_active = True
-            conversation.start_session()
-            signal.signal(signal.SIGINT, lambda sig, frame: conversation.end_session())
-            conversation_id = conversation.wait_for_session_end()
-            print(f"Conversation ID: {conversation_id}")
-            convai_active = False
-            print("Ready for next wake word...")
+        try:
+            frame = mic_stream.getFrame()
+            result = mycroft_hw.scoreFrame(frame)
+            if result == None:
+                #no voice activity
+                continue
+            if result["match"]:
+                print("Wakeword uttered", result["confidence"])
+                
+                # Stop the microphone stream to avoid conflicts
+                stop_mic_stream()
+                
+                # Start ConvAI Session
+                print("Start ConvAI Session")
+                convai_active = True
+                
+                try:
+                    # Create a new conversation instance
+                    conversation = create_conversation()
+                    
+                    # Start the session
+                    conversation.start_session()
+                    
+                    # Set up signal handler for graceful shutdown
+                    def signal_handler(sig, frame):
+                        print("Received interrupt signal, ending session...")
+                        try:
+                            conversation.end_session()
+                        except Exception as e:
+                            print(f"Error ending session: {e}")
+                    
+                    signal.signal(signal.SIGINT, signal_handler)
+                    
+                    # Wait for session to end
+                    conversation_id = conversation.wait_for_session_end()
+                    print(f"Conversation ID: {conversation_id}")
+                    
+                except Exception as e:
+                    print(f"Error during conversation: {e}")
+                finally:
+                    # Cleanup
+                    convai_active = False
+                    print("Conversation ended, cleaning up...")
+                    
+                    # Give some time for cleanup
+                    time.sleep(1)
+                    
+                    # Restart microphone stream
+                    start_mic_stream()
+                    print("Ready for next wake word...")
+                    
+        except Exception as e:
+            print(f"Error in wake word detection: {e}")
+            # Try to restart microphone stream if there's an error
+            time.sleep(1)
+            start_mic_stream()
