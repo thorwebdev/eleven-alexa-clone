@@ -55,7 +55,6 @@ def create_conversation():
         callback_agent_response=lambda response: print(f"Agent: {response}"),
         callback_agent_response_correction=lambda original, corrected: print(f"Agent: {original} -> {corrected}"),
         callback_user_transcript=lambda transcript: print(f"User: {transcript}"),
-        # TODO: how to handle conversation ended by agent end_call system tool?
         
         # Uncomment if you want to see latency measurements.
         # callback_latency_measurement=lambda latency: print(f"Latency: {latency}ms"),
@@ -65,6 +64,7 @@ def start_mic_stream():
     """Start or restart the microphone stream"""
     global mic_stream
     try:
+        # Always create a new stream instance
         mic_stream = SimpleMicStream(
             window_length_secs=1.5,
             sliding_window_secs=0.75,
@@ -73,6 +73,7 @@ def start_mic_stream():
         print("Microphone stream started")
     except Exception as e:
         print(f"Error starting microphone stream: {e}")
+        mic_stream = None
         time.sleep(1)  # Wait a bit before retrying
 
 def stop_mic_stream():
@@ -80,7 +81,9 @@ def stop_mic_stream():
     global mic_stream
     try:
         if mic_stream:
-            mic_stream.stop_stream()
+            # SimpleMicStream doesn't have a stop_stream method
+            # We'll just set it to None and recreate it next time
+            mic_stream = None
             print("Microphone stream stopped")
     except Exception as e:
         print(f"Error stopping microphone stream: {e}")
@@ -93,6 +96,11 @@ print("Say Hey Eleven ")
 while True:
     if not convai_active:
         try:
+            # Make sure we have a valid mic stream
+            if mic_stream is None:
+                start_mic_stream()
+                continue
+                
             frame = mic_stream.getFrame()
             result = mycroft_hw.scoreFrame(frame)
             if result == None:
@@ -146,5 +154,6 @@ while True:
         except Exception as e:
             print(f"Error in wake word detection: {e}")
             # Try to restart microphone stream if there's an error
+            mic_stream = None
             time.sleep(1)
             start_mic_stream()
