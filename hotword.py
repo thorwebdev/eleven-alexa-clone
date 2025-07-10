@@ -81,8 +81,6 @@ def stop_mic_stream():
     global mic_stream
     try:
         if mic_stream:
-            # Add a small delay to allow the stream to finish processing
-            time.sleep(0.1)
             # SimpleMicStream doesn't have a stop_stream method
             # We'll just set it to None and recreate it next time
             mic_stream = None
@@ -114,14 +112,10 @@ while True:
                 # Stop the microphone stream to avoid conflicts
                 stop_mic_stream()
                 
-                # Add delay to ensure audio resources are fully released
-                time.sleep(0.5)
-                
                 # Start ConvAI Session
                 print("Start ConvAI Session")
                 convai_active = True
                 
-                conversation = None
                 try:
                     # Create a new conversation instance
                     conversation = create_conversation()
@@ -133,8 +127,7 @@ while True:
                     def signal_handler(sig, frame):
                         print("Received interrupt signal, ending session...")
                         try:
-                            if conversation:
-                                conversation.end_session()
+                            conversation.end_session()
                         except Exception as e:
                             print(f"Error ending session: {e}")
                     
@@ -151,15 +144,8 @@ while True:
                     convai_active = False
                     print("Conversation ended, cleaning up...")
                     
-                    # Try to properly end the session if it's still active
-                    if conversation:
-                        try:
-                            conversation.end_session()
-                        except Exception as e:
-                            print(f"Error in final cleanup: {e}")
-                    
-                    # Give extra time for audio resources to be released
-                    time.sleep(2)
+                    # Give some time for cleanup
+                    time.sleep(1)
                     
                     # Restart microphone stream
                     start_mic_stream()
