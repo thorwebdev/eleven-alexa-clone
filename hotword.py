@@ -15,7 +15,7 @@ from elevenlabs.conversational_ai.default_audio_interface import DefaultAudioInt
 convai_active = False
 
 elevenlabs = ElevenLabs()
-agent_id = "agent_01jynq02rjevdv9nr3zrqxa4mw" # os.getenv("AGENT_ID")
+agent_id = os.getenv("ELEVENLABS_AGENT_ID")
 api_key = os.getenv("ELEVENLABS_API_KEY")
 
 dynamic_vars = {
@@ -29,7 +29,7 @@ config = ConversationInitiationData(
 
 base_model = Resnet50_Arc_loss()
 
-mycroft_hw = HotwordDetector(
+eleven_hw = HotwordDetector(
     hotword="hey_eleven",
     model = base_model,
     reference_file=os.path.join("hotword_refs", "hey_eleven_ref.json"),
@@ -102,7 +102,7 @@ while True:
                 continue
                 
             frame = mic_stream.getFrame()
-            result = mycroft_hw.scoreFrame(frame)
+            result = eleven_hw.scoreFrame(frame)
             if result == None:
                 #no voice activity
                 continue

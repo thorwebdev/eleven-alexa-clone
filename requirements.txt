@@ -2,3 +2,4 @@ tflite-runtime
 librosa
 EfficientWord-Net
 elevenlabs
+elevenlabs[pyaudio]
