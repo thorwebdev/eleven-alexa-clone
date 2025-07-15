@@ -1,6 +1,0 @@
-numpy==1.22.0
-tflite-runtime>=2.14.0
-librosa>=0.8.0
-EfficientWord-Net>=0.2.2
-elevenlabs>=2.0.0
-elevenlabs[pyaudio]>=2.0.0
